@@ -1,26 +1,35 @@
 // public/sw.js
 const isProd = self.location.hostname.startsWith("app");
-const CACHE_NAME = `everall-cache-v1`;
+const CACHE_NAME = "everall-cache-v1";
 const OFFLINE_URL = "/offline.html";
-// Helper function to handle paths based on environment
-const getAssetPath = (path) => {
-  if (isProd) {
-    // In production, assets are at root or in /assets/
-    return path.replace("/dashboard/", "/assets/");
-  }
-  // In development/API, keep dashboard prefix
-  return path;
-};
+const ASSETS_BUTTONS = "/assets/images/home-but";
+const ASSETS_ICONS = "/assets/icons";
+
 // Install Event
 self.addEventListener("install", (event) => {
-  console.log(`🛠️ Service Worker installing... (${isProd ? "prod" : "dev"})`);
+  console.log("🛠️ Service Worker installing...");
+  const filesToCache = [
+    OFFLINE_URL,
+    `${ASSETS_ICONS}/logoLight.png`,
+    `${ASSETS_BUTTONS}/logoLight.ico`,
+  ];
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        OFFLINE_URL,
-        getAssetPath("/dashboard/images/home-but/logoLight.png"),
-        getAssetPath("/dashboard/badge.ico"),
-      ]);
+      return Promise.all(
+        filesToCache.map((url) =>
+          fetch(url)
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Failed to fetch ${url}`);
+              }
+              return cache.put(url, response);
+            })
+            .catch((error) => {
+              console.warn(`Failed to cache ${url}:`, error);
+            })
+        )
+      );
     })
   );
   self.skipWaiting();
@@ -69,8 +78,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: data.icon || "dashboard/images/home-but/logoLight.png",
-      badge: data.badge || "/dashboard/badge.ico",
+      icon: `${ASSETS_ICONS}/logoLight.png`,
+      badge: `${ASSETS_BUTTONS}/logoLight.ico`,
       timestamp: data.timestamp || Date.now(),
     };
     event.waitUntil(
@@ -89,8 +98,8 @@ self.addEventListener("message", (event) => {
   switch (type) {
     case "SHOW_NOTIFICATION":
       self.registration.showNotification(payload.title, {
-        icon: "dashboard/images/home-but/logoLight.png",
-        badge: "/dashboard/badge.ico",
+        icon: `${ASSETS_ICONS}/logoLight.png`,
+        badge: `${ASSETS_BUTTONS}/logoLight.ico`,
         timestamp: Date.now(),
         ...payload,
       });
