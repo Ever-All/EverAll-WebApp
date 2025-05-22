@@ -1,22 +1,25 @@
 // public/sw.js
-const isProd = self.location.hostname.startsWith("app");
-const CACHE_NAME = `everall-cache-v1`;
-const OFFLINE_URL = "/offline.html";
-console.log(`🌍 Running in ${isProd ? "production" : "development"} mode`);
-// Helper function to remove dashboard from paths in production
-const getProperPath = (path) => {
-  return isProd ? path.replace(/\/dashboard\//g, "/") : path;
+const CACHE_NAME = "everall-cache-v1";
+// Determine if we should strip '/dashboard' from paths
+const isAppSubdomain = self.location.hostname === "app.ever-all.us";
+// Utility to adjust paths based on subdomain
+const resolvePath = (path) => {
+  return isAppSubdomain ? path.replace(/^\/dashboard/, "") : path;
 };
+const OFFLINE_URL = resolvePath("/dashboard/offline.html");
 // Install Event
 self.addEventListener("install", (event) => {
-  console.log(`🛠️ Service Worker installing... (${isProd ? "prod" : "dev"})`);
+  console.log("🛠️ Service Worker installing...");
+  const filesToCache = [
+    resolvePath("/dashboard/offline.html"),
+    resolvePath("/dashboard/logoLight.png"),
+    resolvePath("/dashboard/badge.ico"),
+  ];
+  console.log("Caching files:", filesToCache);
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        OFFLINE_URL,
-        getProperPath("/dashboard/logoLight.png"),
-        getProperPath("/dashboard/badge.ico"),
-      ]);
+      return cache.addAll(filesToCache);
     })
   );
   self.skipWaiting();
@@ -37,19 +40,10 @@ self.addEventListener("activate", (event) => {
 });
 // Fetch Event
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-  url.pathname = getProperPath(url.pathname);
-
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(new Request(url)).catch(() => {
+      fetch(event.request).catch(() => {
         return caches.match(OFFLINE_URL);
-      })
-    );
-  } else {
-    event.respondWith(
-      fetch(new Request(url)).catch(() => {
-        return caches.match(event.request);
       })
     );
   }
@@ -61,8 +55,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: getProperPath("/dashboard/logoLight.png"),
-      badge: getProperPath("/dashboard/badge.ico"),
+      icon: resolvePath("/dashboard/logoLight.png"),
+      badge: resolvePath("/dashboard/badge.ico"),
       timestamp: data.timestamp || Date.now(),
     };
     event.waitUntil(
@@ -81,8 +75,8 @@ self.addEventListener("message", (event) => {
   switch (type) {
     case "SHOW_NOTIFICATION":
       self.registration.showNotification(payload.title, {
-        icon: "/dashboard/logoLight.png",
-        badge: "/dashboard/badge.ico",
+        icon: resolvePath("/dashboard/logoLight.png"),
+        badge: resolvePath("/dashboard/badge.ico"),
         timestamp: Date.now(),
         ...payload,
       });
