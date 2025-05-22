@@ -1,19 +1,14 @@
 // public/sw.js
 const CACHE_NAME = "everall-cache-v1";
-// Determine if we should strip '/dashboard' from paths
-const isAppSubdomain = self.location.hostname === "app.ever-all.us";
-// Utility to adjust paths based on subdomain
-const resolvePath = (path) => {
-  return isAppSubdomain ? path.replace(/^\/dashboard/, "") : path;
-};
-const OFFLINE_URL = resolvePath("/dashboard/offline.html");
+const OFFLINE_URL = "/offline.html";
+
 // Install Event
 self.addEventListener("install", (event) => {
   console.log("🛠️ Service Worker installing...");
   const filesToCache = [
-    resolvePath("/dashboard/offline.html"),
-    resolvePath("/dashboard/logoLight.png"),
-    resolvePath("/dashboard/badge.ico"),
+    "/offline.html",
+    "/logoLight.png",
+    "/badge.ico",
   ];
   console.log("Caching files:", filesToCache);
 
@@ -55,8 +50,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: resolvePath("/dashboard/logoLight.png"),
-      badge: resolvePath("/dashboard/badge.ico"),
+      icon: "/logoLight.png",
+      badge: "/badge.ico",
       timestamp: data.timestamp || Date.now(),
     };
     event.waitUntil(
@@ -75,8 +70,8 @@ self.addEventListener("message", (event) => {
   switch (type) {
     case "SHOW_NOTIFICATION":
       self.registration.showNotification(payload.title, {
-        icon: resolvePath("/dashboard/logoLight.png"),
-        badge: resolvePath("/dashboard/badge.ico"),
+        icon: "/logoLight.png",
+        badge: "/badge.ico",
         timestamp: Date.now(),
         ...payload,
       });
