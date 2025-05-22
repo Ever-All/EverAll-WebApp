@@ -18,7 +18,7 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         OFFLINE_URL,
-        getAssetPath("/dashboard/logoLight.png"),
+        getAssetPath("/dashboard/images/home-but/logoLight.png"),
         getAssetPath("/dashboard/badge.ico"),
       ]);
     })
@@ -69,7 +69,7 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: data.icon || "/dashboard/logoLight.png",
+      icon: data.icon || "dashboard/images/home-but/logoLight.png",
       badge: data.badge || "/dashboard/badge.ico",
       timestamp: data.timestamp || Date.now(),
     };
@@ -89,7 +89,7 @@ self.addEventListener("message", (event) => {
   switch (type) {
     case "SHOW_NOTIFICATION":
       self.registration.showNotification(payload.title, {
-        icon: "/dashboard/logoLight.png",
+        icon: "dashboard/images/home-but/logoLight.png",
         badge: "/dashboard/badge.ico",
         timestamp: Date.now(),
         ...payload,
