@@ -1,22 +1,21 @@
 // public/sw.js
-const isDev = self.location.hostname.startsWith("api");
+const isProd = self.location.hostname.startsWith("app");
 const CACHE_NAME = `everall-cache-v1`;
 const OFFLINE_URL = "/offline.html";
-console.log(`🌍 Running in ${isDev ? "development" : "production"} mode`);
-// Helper function to handle paths based on environment
-const getAssetPath = (path) => {
-  // If in dev (api), keep /dashboard/, if in prod (app) remove it
-  return isDev ? path : path.replace("/dashboard/", "/");
+console.log(`🌍 Running in ${isProd ? "production" : "development"} mode`);
+// Helper function to remove dashboard from paths in production
+const getProperPath = (path) => {
+  return isProd ? path.replace(/\/dashboard\//g, "/") : path;
 };
 // Install Event
 self.addEventListener("install", (event) => {
-  console.log(`🛠️ Service Worker installing... (${isDev ? "dev" : "prod"})`);
+  console.log(`🛠️ Service Worker installing... (${isProd ? "prod" : "dev"})`);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         OFFLINE_URL,
-        getAssetPath("/dashboard/logoLight.png"),
-        getAssetPath("/dashboard/badge.ico"),
+        getProperPath("/dashboard/logoLight.png"),
+        getProperPath("/dashboard/badge.ico"),
       ]);
     })
   );
@@ -38,18 +37,19 @@ self.addEventListener("activate", (event) => {
 });
 // Fetch Event
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/dashboard/")) {
-    const url = new URL(event.request.url);
-    url.pathname = getAssetPath(url.pathname);
+  const url = new URL(event.request.url);
+  url.pathname = getProperPath(url.pathname);
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(new Request(url)).catch(() => {
+        return caches.match(OFFLINE_URL);
+      })
+    );
+  } else {
     event.respondWith(
       fetch(new Request(url)).catch(() => {
         return caches.match(event.request);
-      })
-    );
-  } else if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(OFFLINE_URL);
       })
     );
   }
@@ -61,8 +61,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: getAssetPath("/dashboard/logoLight.png"),
-      badge: getAssetPath("/dashboard/badge.ico"),
+      icon: getProperPath("/dashboard/logoLight.png"),
+      badge: getProperPath("/dashboard/badge.ico"),
       timestamp: data.timestamp || Date.now(),
     };
     event.waitUntil(
