@@ -33,9 +33,16 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(OFFLINE_URL);
-      })
+      fetch(event.request)
+        .then((response) => {
+          if (response.status === 404) {
+            return caches.match("/");
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(OFFLINE_URL);
+        })
     );
   }
 });
