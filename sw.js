@@ -1,19 +1,10 @@
 // public/sw.js
-const isProd = self.location.hostname.startsWith("app");
 const CACHE_NAME = "everall-cache-v1";
 const OFFLINE_URL = "/offline.html";
-const ASSETS_BUTTONS = "/assets/images/home-but";
-const ASSETS_ICONS = "/assets/icons";
-
 // Install Event
 self.addEventListener("install", (event) => {
   console.log("🛠️ Service Worker installing...");
-  const filesToCache = [
-    OFFLINE_URL,
-    `${ASSETS_ICONS}/logoLight.png`,
-    `${ASSETS_BUTTONS}/logoLight.ico`,
-  ];
-
+  const filesToCache = [OFFLINE_URL, "/logoLight.png", "/logoLight.ico"];
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return Promise.all(
@@ -50,24 +41,6 @@ self.addEventListener("activate", (event) => {
 });
 // Fetch Event
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-  
-  // Handle asset paths based on environment
-  if (url.pathname.includes("/dashboard/") || url.pathname.includes("/assets/")) {
-    const newUrl = new URL(event.request.url);
-    newUrl.pathname = isProd 
-      ? url.pathname.replace("/dashboard/", "/assets/")
-      : url.pathname;
-    
-    event.respondWith(
-      fetch(newUrl).catch(() => {
-        return caches.match(event.request);
-      })
-    );
-    return;
-  }
-
-  // Handle navigation
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -83,8 +56,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       ...data,
-      icon: `${ASSETS_ICONS}/logoLight.png`,
-      badge: `${ASSETS_BUTTONS}/logoLight.ico`,
+      icon: "/logoLight.png",
+      badge: "/logoLight.ico",
       timestamp: data.timestamp || Date.now(),
     };
     event.waitUntil(
@@ -103,8 +76,8 @@ self.addEventListener("message", (event) => {
   switch (type) {
     case "SHOW_NOTIFICATION":
       self.registration.showNotification(payload.title, {
-        icon: `${ASSETS_ICONS}/logoLight.png`,
-        badge: `${ASSETS_BUTTONS}/logoLight.ico`,
+        icon: "/logoLight.png",
+        badge: "/logoLight.ico",
         timestamp: Date.now(),
         ...payload,
       });
