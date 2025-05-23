@@ -51,10 +51,14 @@ self.addEventListener("activate", (event) => {
 // Fetch Event
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  // Handle dashboard assets
-  if (url.pathname.includes("/dashboard/")) {
+  
+  // Handle asset paths based on environment
+  if (url.pathname.includes("/dashboard/") || url.pathname.includes("/assets/")) {
     const newUrl = new URL(event.request.url);
-    newUrl.pathname = getAssetPath(url.pathname);
+    newUrl.pathname = isProd 
+      ? url.pathname.replace("/dashboard/", "/assets/")
+      : url.pathname;
+    
     event.respondWith(
       fetch(newUrl).catch(() => {
         return caches.match(event.request);
@@ -62,6 +66,7 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+
   // Handle navigation
   if (event.request.mode === "navigate") {
     event.respondWith(
